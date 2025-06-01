@@ -28,33 +28,56 @@ class AddBusController extends Controller
                 return response()->json(['validation_error' => $validator->messages()]);
             }
 
-            $busData = AddBus::updateOrCreate(
-                ['bus_plate_number' => $request->bus_plate_number],
-                [
+            // Check if the bus with the plate number already exists
+            $busData = AddBus::where('bus_plate_number', $request->bus_plate_number)->first();
+
+            if ($busData) {
+
+                // Bus exists, update it
+                $busData->update([
                     'operator_name' => $request->operator_name,
                     'bus_name' => $request->bus_name,
                     'bus_type' => $request->bus_type,
                     'driver_name' => $request->driver_name,
                     'driver_phone' => $request->driver_phone,
                     'driver_alternative_phone' => $request->driver_alternative_phone,
-                ]
-            );
+                ]);
 
-            
-            // Check if bus record is created
+            } else {
+
+                // Bus doesn't exist, create a new one
+                $busData = AddBus::create([
+                    'bus_plate_number' => $request->bus_plate_number,
+                    'operator_name' => $request->operator_name,
+                    'unique_bus_id' => $this->generateUniqueId(), // Generate only for new records
+                    'bus_name' => $request->bus_name,
+                    'bus_type' => $request->bus_type,
+                    'driver_name' => $request->driver_name,
+                    'driver_phone' => $request->driver_phone,
+                    'driver_alternative_phone' => $request->driver_alternative_phone,
+                ]);
+
+            }
+
+            // Check if bus record is created or updated
             if ($busData) {
+                
                 return response()->json([
                     'status' => 200,
-                    'message' => 'Bus added successfully',
+                    'message' => 'Bus added/updated successfully',
                     'bus_data' => $busData,
                 ]);
+
             } else {
+
                 return response()->json([
                     'status' => 400,
-                    'message' => 'Failed to add bus, please check the form data',
+                    'message' => 'Failed to add/update bus, please check the form data',
                 ]);
+
             }
         } catch (Exception $e) {
+
             return response()->json([
                 'status' => 500,
                 'message' => 'Server error',
@@ -63,4 +86,18 @@ class AddBusController extends Controller
         }
     }
 
+
+    private function generateUniqueId()
+    {
+        do {
+            // Generate 6-character alphanumeric ID with 'BUS' prefix
+            $uniqueId = 'BUS-' . strtoupper(substr(uniqid(), -4)) . strtoupper(substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 2)); 
+        } while (AddBus::where('unique_bus_id', $uniqueId)->exists()); // Check if ID already exists
+
+        return $uniqueId;
+    }
+
+
+
+    
 }

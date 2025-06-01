@@ -13,9 +13,12 @@ return new class extends Migration
     {
         Schema::create('add_buses', function (Blueprint $table) {
             $table->id();
+            $table->string('unique_bus_id')->nullable();
             $table->string('operator_name')->nullable();
             $table->string('bus_name')->nullable();
-            $table->string('bus_type')->nullable();
+            $table->string('sleeper')->nullable()->default(false);
+            $table->string('vip')->nullable()->default(false);
+            $table->string('Ac_type')->nullable()->default(true);
             $table->string('bus_plate_number')->nullable()->index();
             $table->string('driver_name')->nullable();
             $table->string('driver_phone')->nullable();
