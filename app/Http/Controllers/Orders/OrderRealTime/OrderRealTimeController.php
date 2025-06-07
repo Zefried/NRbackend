@@ -94,7 +94,8 @@ class OrderRealTimeController extends Controller
             // order id we will find from razorpay callback data
             // using the order id we will find the orderData 
 
-            $order = Orders::where('id', 6)->first(); 
+            $order = Orders::where('id', 2)->first(); 
+       
 
             if (!$order) {
                 return response()->json(['error' => 'Order not found'], 404);
@@ -104,6 +105,7 @@ class OrderRealTimeController extends Controller
             $status = $request->payment_status;
 
             if ($status === 'paid') {
+            
 
                 $bookingProcess = $order->update([
                     'payment_status' => $status,
@@ -111,20 +113,40 @@ class OrderRealTimeController extends Controller
 
 
                 if ($bookingProcess) {
-                        
+                          
                     $bookings = $this->createBooking($order);
 
                     if ($bookings) {
-      
-                        $seatConfigStatus = $this->seatConfigRun($order->id);
+                     
+                       if ($bookings->seat_type === 'seater') {
 
+                            $seatConfigStatus = $this->seatConfigRun($order->id);
 
-                        return response()->json([
-                            'status' => 200,
-                            'message' => 'Booking successful',
-                            'data' => $seatConfigStatus,
-                        ]);
+                            return response()->json([
+                                'status' => 200,
+                                'message' => 'Booking successful',
+                                'data' => $seatConfigStatus,
+                            ]);
 
+                        } elseif ($bookings->seat_type === 'sleeper') {
+
+                            $seatConfigStatus = $this->seatConfigRun($order->id);
+
+                            return response()->json([
+                                'status' => 200,
+                                'message' => 'Booking successful',
+                                'data' => $seatConfigStatus,
+                            ]);
+
+                            
+                        } elseif ($bookings->seat_type === 'vip') {
+
+                            return response()->json('yha vip seat config hoga');
+
+                        } else {
+                            return response()->json('something went wrong in the booking, please contact support or try again');
+                        }
+                        
                     } else {
 
                         return response()->json([
@@ -190,51 +212,77 @@ class OrderRealTimeController extends Controller
 
 
 
-    public function seatConfigRun($orderId) {
-       
-
+    public function seatConfigRun($orderId)
+    {
         $bookingData = Bookings::where('order_id', $orderId)->first();
-
 
         if (!$bookingData) {
             return response()->json(['error' => 'Booking not found'], 404);
         }
 
         if ($bookingData->seat_type === 'sleeper') {
-            return 'sleeper run hua hai';
+
+            $sleeperData = $this->storeSleeperConfig($bookingData);
+
         } elseif ($bookingData->seat_type === 'vip') {
-            return 'vip run hua hai';
+
+            $vipData = $this->storeVipConfig($bookingData);
+
         } else {
+            $ssData = $this->storeSeatingSeater($bookingData);
 
-            $busId = $bookingData->bus_id;
-            $seatConfig = SeatConfig::where('bus_id', $busId)->first();
-
-            if ($seatConfig) {
-                $booked = json_decode($seatConfig->booked, true) ?? [];
-                $seatConfig->booked = json_encode(array_merge($booked, [$bookingData->seat_no]));
-
-                if ($bookingData->gender === 'female') {
-                    $femaleBooked = json_decode($seatConfig->booked_by_female, true) ?? [];
-                    $seatConfig->booked_by_female = json_encode(array_merge($femaleBooked, [$bookingData->seat_no]));
-                }
-
-                if ($bookingData->gender === 'other') {
-                    $otherBooked = json_decode($seatConfig->booked_by_other, true) ?? [];
-                    $seatConfig->booked_by_other = json_encode(array_merge($otherBooked, [$bookingData->seat_no]));
-                }
-
-                $booked = json_decode($seatConfig->booked, true) ?? [];
-                $seatConfig->currently_avl = $seatConfig->total_seats - count($booked);
-                $seatConfig->save();
-
-                return $seatConfig;
-
+            if ($ssData) {
+                return response()->json($ssData); 
             } else {
                 return response()->json(['error' => 'SeatConfig not found'], 404);
             }
         }
     }
 
+    public function storeSeatingSeater($bookingData)
+    {
+        // we are using seatConfig model to store seating seaters however for sleeper and vip 
+        // we have different models 
+
+        $busId = $bookingData->bus_id;
+        $seatConfig = SeatConfig::where('bus_id', $busId)->first();
+
+        if ($seatConfig) {
+
+            $booked = json_decode($seatConfig->booked, true) ?? [];
+            $seatConfig->booked = json_encode(array_merge($booked, [$bookingData->seat_no]));
+
+            if ($bookingData->gender === 'female') {
+                $femaleBooked = json_decode($seatConfig->booked_by_female, true) ?? [];
+                $seatConfig->booked_by_female = json_encode(array_merge($femaleBooked, [$bookingData->seat_no]));
+            }
+
+            if ($bookingData->gender === 'other') {
+                $otherBooked = json_decode($seatConfig->booked_by_other, true) ?? [];
+                $seatConfig->booked_by_other = json_encode(array_merge($otherBooked, [$bookingData->seat_no]));
+            }
+
+            $updatedBooked = json_decode($seatConfig->booked, true) ?? [];
+            $seatConfig->currently_avl = $seatConfig->total_seats - count($updatedBooked);
+            $seatConfig->save();
+
+            return $seatConfig;
+        }
+
+        return null;
+    }
+
+
+    public function storeSleeperConfig($bookingData)
+    {
+        return 'store sleeper config';
+    }
+  
+
+    public function storeVipConfig($bookingData)
+    {
+        return 'vip config';
+    }
 
 
 }

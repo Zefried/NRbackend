@@ -4,6 +4,8 @@ namespace App\Http\Controllers\BusConfig\AddSeats;
 
 use App\Http\Controllers\Controller;
 use App\Models\BusConfig\SeatConfig\SeatConfig;
+use App\Models\BusConfig\SleeperConfig\SleeperConfig;
+use App\Models\BusConfig\VipConfig\VipConfig;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -11,48 +13,58 @@ use Illuminate\Support\Facades\Validator;
 class NormalSeat_SS_Controller extends Controller
 {
 
-    public function addSeat(Request $request){
-
-        try{
-
+    public function addSeat(Request $request)
+    {
+        try {
             $validator = Validator::make($request->all(), [
                 'seat_row' => 'required|integer',
                 'layout' => 'required|integer',
                 'total_seats' => 'required|integer'
             ]);
 
-            if($validator->fails()){
+            if ($validator->fails()) {
                 return response()->json(['validation_error' => $validator->getMessageBag()]);
             }
 
-            if($request->seat_type === 'vip'){
+            if ($request->seat_type === 'vip') {
+               
+                $data = VipConfig::create([
+                    'bus_id' => $request->bus_id,
+                    'seat_row' => $request->seat_row,
+                    'layout' => $request->layout,
+                    'total_seats' => $request->total_seats
+                ]);
+            }
 
-                
-            } else if($request->seat_type === 'sleeper'){
-                // for sleeper
+            if ($request->seat_type === 'sleeper') {
+                $data = SleeperConfig::create([
+                    'bus_id' => $request->bus_id,
+                    'seat_row' => $request->seat_row,
+                    'layout' => $request->layout,
+                    'total_seats' => $request->total_seats
+                ]);
             } else {
-
                 $data = SeatConfig::create([
                     'bus_id' => $request->bus_id,
                     'seat_row' => $request->seat_row,
                     'layout' => $request->layout,
                     'total_seats' => $request->total_seats
                 ]);
+            }
 
-                if ($data->total_seats) {
+            if ($data->total_seats) {
                 $data->double_side = $this->handleDoubleSeatSide($data->total_seats);
                 $data->save();
             }
 
-                return response()->json([
-                    'status' => 200,
-                    'message' => 'Seat data stored successfully',
-                    'seatConfig' => $data
-                ]);
+            return response()->json([
+                'status' => 200,
+                'message' => 'Seat data stored successfully',
+                'seatConfig' => $data
+            ]);
 
-            }
+        } catch (Exception $e) {
 
-        } catch(Exception $e){
             return response()->json([
                 'status' => 500,
                 'message' => 'server catch error',
@@ -61,8 +73,8 @@ class NormalSeat_SS_Controller extends Controller
         }
     }
 
-
-    private function handleDoubleSeatSide($totalSeats){
+    private function handleDoubleSeatSide($totalSeats)
+    { 
         try {
             $doubleSide = [];
 
@@ -73,13 +85,8 @@ class NormalSeat_SS_Controller extends Controller
             }
 
             return json_encode($doubleSide);
-
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => 500,
-                'message' => 'server catch error',
-                'error' => $e->getMessage(),
-            ]);
+            return json_encode([]);
         }
     }
 
