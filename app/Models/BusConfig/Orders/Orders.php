@@ -3,6 +3,7 @@
 namespace App\Models\BusConfig\Orders;
 
 use App\Models\BusConfig\Bookings\Bookings;
+use App\Models\BusConfig\SeatHoldingConfig\SeatHoldingConfig;
 use Illuminate\Database\Eloquent\Model;
 
 class Orders extends Model
@@ -18,15 +19,18 @@ class Orders extends Model
         'age',
         'boarding',
         'dropping',
-        'seat_no_hold',
-        'seat_type',
         'amount',
         'order_status',
     ];
 
     public function booking()
     {
-        return $this->hasOne(Bookings::class, 'order_id');
+        return $this->hasOne(Bookings::class, 'order_id')->withDefault();;
+    }
+
+    public function orderSeatConfig()
+    {
+        return $this->hasMany(SeatHoldingConfig::class, 'order_id');
     }
 
 }

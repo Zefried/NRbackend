@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\BusConfig\Bookings\Bookings;
 use App\Models\BusConfig\Orders\Orders;
 use App\Models\BusConfig\SeatConfig\SeatConfig;
+use App\Models\BusConfig\SeatHoldingConfig\SeatHoldingConfig;
+use App\Models\BusConfig\SleeperConfig\SleeperConfig;
+use App\Models\BusConfig\VipConfig\VipConfig;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -14,12 +17,11 @@ class OrderRealTimeController extends Controller
 {
 
 
-    public function createOrder(Request $request){
-
-        try{
-
+    public function createOrder(Request $request)
+    {
+        try {
             $validator = Validator::make($request->all(), [
-                'bus_id' => 'nullable|string',
+                'bus_id' => 'required|nullable|string',
                 'bus_name_plate' => 'nullable|string',
                 'customer_name' => 'nullable|string',
                 'gender' => 'nullable|string',
@@ -31,48 +33,65 @@ class OrderRealTimeController extends Controller
                 'seat_type' => 'nullable|string',
                 'amount' => 'nullable|numeric',
                 'order_status' => 'nullable|string',
+                'user_id' => 'nullable|integer',
             ]);
 
-            if($validator->fails()){
+            if ($validator->fails()) {
                 return response()->json(['validation_error' => $validator->messages()]);
             }
 
-            // check again if seat already booked;
-            $checkSeatBooking = SeatConfig::whereJsonContains('booked', (string)$request->seat_no_hold)->first();
 
-            if(!$checkSeatBooking){
+            $data = Orders::create([
+                'bus_id' => $request->bus_id,
+                'user_id' => $request->user_id,
+                'bus_name_plate' => $request->bus_name_plate,
+                'customer_name' => $request->customer_name,
+                'user_phone' => $request->user_phone,
+                'gender' => $request->gender,
+                'age' => $request->age,
+                'boarding' => $request->boarding,
+                'dropping' => $request->dropping,
+                'amount' => $request->amount,
+                'order_status' => $request->order_status,
+            ]);
 
-                $data = Orders::create([
-                    'bus_id' => $request->bus_id,
-                    'user_id' => $request->user_id,
-                    'bus_name_plate' => $request->bus_name_plate,
-                    'customer_name' => $request->customer_name,
-                    'user_phone' => $request->user_phone,
-                    'gender' => $request->gender,
-                    'age' => $request->age,
-                    'boarding' => $request->boarding,
-                    'dropping' => $request->dropping,
-                    'seat_no_hold' => $request->seat_no_hold,
-                    'seat_type' => $request->seat_type,
-                    'amount' => $request->amount,
-                    'order_status' => $request->order_status,
-                ]);
+      
 
+            if ($data) {
+    
+              $seatHoldingData = $this->handleSeatHoldingConfig($request->seat_no_hold, $data);
+                
                 return response()->json([
                     'status' => 200,
                     'message' => 'order saved',
                     'data' => $data,
+                    'seatHoldingData' => $seatHoldingData
                 ]);
-
-            }else{
-                return response()->json('Seat Already booked by another user please try to book another seat');
             }
 
-           
-
-        }catch(Exception $e){  
+        } catch (Exception $e) {
             return response()->json($e->getMessage());
         }
+    }
+
+    public function handleSeatHoldingConfig($seatHoldData, $order)
+    {
+        $response = [];
+
+        foreach ($seatHoldData as $type => $seats) {
+            
+            $confirmingSeatHolding = SeatHoldingConfig::create([
+                'order_id' => $order->id,
+                'bus_id' => $order->bus_id,
+                'user_id' => $order->user_id,
+                'seat_no_hold' => json_encode($seats),  // poora seat array yahan JSON mein
+                'seat_type' => $type,
+                'holding_disable' => false
+            ]);
+            $response[] = $confirmingSeatHolding;
+        }
+
+        return $response;
     }
     
 
@@ -87,6 +106,8 @@ class OrderRealTimeController extends Controller
     // If payment succeeds, update the status as the first step.  
     // Then create the booking by fetching order data.  
 
+
+
     public function paymentStatus(Request $request)
     {
         try {
@@ -94,8 +115,13 @@ class OrderRealTimeController extends Controller
             // order id we will find from razorpay callback data
             // using the order id we will find the orderData 
 
-            $order = Orders::where('id', 2)->first(); 
-       
+            // Fetching orders made within the last 48 hours for a specific user_id
+            $order = Orders::where('id', 1)
+                ->with(['orderSeatConfig' => function ($q) {
+                    $q->where('created_at', '>=', now()->subHours(20));
+                }])->get();
+                        
+            return response()->json($order);
 
             if (!$order) {
                 return response()->json(['error' => 'Order not found'], 404);
@@ -118,34 +144,13 @@ class OrderRealTimeController extends Controller
 
                     if ($bookings) {
                      
-                       if ($bookings->seat_type === 'seater') {
+                        $seatConfigStatus = $this->seatConfigRun($order->id);
 
-                            $seatConfigStatus = $this->seatConfigRun($order->id);
-
-                            return response()->json([
-                                'status' => 200,
-                                'message' => 'Booking successful',
-                                'data' => $seatConfigStatus,
-                            ]);
-
-                        } elseif ($bookings->seat_type === 'sleeper') {
-
-                            $seatConfigStatus = $this->seatConfigRun($order->id);
-
-                            return response()->json([
-                                'status' => 200,
-                                'message' => 'Booking successful',
-                                'data' => $seatConfigStatus,
-                            ]);
-
-                            
-                        } elseif ($bookings->seat_type === 'vip') {
-
-                            return response()->json('yha vip seat config hoga');
-
-                        } else {
-                            return response()->json('something went wrong in the booking, please contact support or try again');
-                        }
+                        return response()->json([
+                            'status' => 200,
+                            'message' => 'Booking successful',
+                            'data' => $seatConfigStatus,
+                        ]);
                         
                     } else {
 
@@ -220,23 +225,25 @@ class OrderRealTimeController extends Controller
             return response()->json(['error' => 'Booking not found'], 404);
         }
 
-        if ($bookingData->seat_type === 'sleeper') {
+        if ($bookingData->seat_type === 'sleeper') {    
+            return 3;
 
-            $sleeperData = $this->storeSleeperConfig($bookingData);
+            $storeData = $this->storeSleeperConfig($bookingData);
 
         } elseif ($bookingData->seat_type === 'vip') {
 
-            $vipData = $this->storeVipConfig($bookingData);
+            $storeData = $this->storeVipConfig($bookingData);
 
         } else {
-            $ssData = $this->storeSeatingSeater($bookingData);
+            $storeData = $this->storeSeatingSeater($bookingData);
 
-            if ($ssData) {
-                return response()->json($ssData); 
+            if ($storeData) {
+                return response()->json($storeData); 
             } else {
                 return response()->json(['error' => 'SeatConfig not found'], 404);
             }
         }
+
     }
 
     public function storeSeatingSeater($bookingData)
@@ -275,13 +282,63 @@ class OrderRealTimeController extends Controller
 
     public function storeSleeperConfig($bookingData)
     {
-        return 'store sleeper config';
+        $busId = $bookingData->bus_id;
+        $seatConfig = SleeperConfig::where('bus_id', $busId)->first();
+
+        if ($seatConfig) {
+
+            $booked = json_decode($seatConfig->booked, true) ?? [];
+            $seatConfig->booked = json_encode(array_merge($booked, [$bookingData->seat_no]));
+
+            if ($bookingData->gender === 'female') {
+                $femaleBooked = json_decode($seatConfig->booked_by_female, true) ?? [];
+                $seatConfig->booked_by_female = json_encode(array_merge($femaleBooked, [$bookingData->seat_no]));
+            }
+
+            if ($bookingData->gender === 'other') {
+                $otherBooked = json_decode($seatConfig->booked_by_other, true) ?? [];
+                $seatConfig->booked_by_other = json_encode(array_merge($otherBooked, [$bookingData->seat_no]));
+            }
+
+            $updatedBooked = json_decode($seatConfig->booked, true) ?? [];
+            $seatConfig->currently_avl = $seatConfig->total_seats - count($updatedBooked);
+            $seatConfig->save();
+
+            return $seatConfig;
+        }
+
+        return null;
     }
   
 
     public function storeVipConfig($bookingData)
     {
-        return 'vip config';
+        $busId = $bookingData->bus_id;
+        $seatConfig = VipConfig::where('bus_id', $busId)->first();
+
+        if ($seatConfig) {
+
+            $booked = json_decode($seatConfig->booked, true) ?? [];
+            $seatConfig->booked = json_encode(array_merge($booked, [$bookingData->seat_no]));
+
+            if ($bookingData->gender === 'female') {
+                $femaleBooked = json_decode($seatConfig->booked_by_female, true) ?? [];
+                $seatConfig->booked_by_female = json_encode(array_merge($femaleBooked, [$bookingData->seat_no]));
+            }
+
+            if ($bookingData->gender === 'other') {
+                $otherBooked = json_decode($seatConfig->booked_by_other, true) ?? [];
+                $seatConfig->booked_by_other = json_encode(array_merge($otherBooked, [$bookingData->seat_no]));
+            }
+
+            $updatedBooked = json_decode($seatConfig->booked, true) ?? [];
+            $seatConfig->currently_avl = $seatConfig->total_seats - count($updatedBooked);
+            $seatConfig->save();
+
+            return $seatConfig;
+        }
+
+        return null;
     }
 
 

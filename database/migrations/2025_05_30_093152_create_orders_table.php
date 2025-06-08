@@ -23,8 +23,6 @@ return new class extends Migration
             $table->integer('age')->nullable();
             $table->string('boarding')->nullable();
             $table->string('dropping')->nullable();
-            $table->string('seat_no_hold')->nullable();
-            $table->string('seat_type')->nullable();
             $table->double('amount')->nullable();
             $table->string('order_status')->nullable()->default('pending');
             $table->timestamps(); 
