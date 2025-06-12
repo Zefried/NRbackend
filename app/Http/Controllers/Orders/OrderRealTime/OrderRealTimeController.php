@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Orders\OrderRealTime;
 use App\Http\Controllers\Controller;
 use App\Models\BusConfig\Bookings\Bookings;
 use App\Models\BusConfig\Orders\Orders;
+use App\Models\BusConfig\RealTimeSeatHoldingStatus\RealTimeSeatHolding;
 use App\Models\BusConfig\SeatConfig\SeatConfig;
 use App\Models\BusConfig\SeatHoldingConfig\SeatHoldingConfig;
 use App\Models\BusConfig\SleeperConfig\SleeperConfig;
@@ -40,6 +41,8 @@ class OrderRealTimeController extends Controller
                 return response()->json(['validation_error' => $validator->messages()]);
             }
 
+
+            // check seat hold if true then send already booked 
 
             $data = Orders::create([
                 'bus_id' => $request->bus_id,
@@ -116,12 +119,8 @@ class OrderRealTimeController extends Controller
             // using the order id we will find the orderData 
 
             // Fetching orders made within the last 48 hours for a specific user_id
-            $order = Orders::where('id', 1)
-                ->with(['orderSeatConfig' => function ($q) {
-                    $q->where('created_at', '>=', now()->subHours(20));
-                }])->get();
-                        
-            return response()->json($order);
+
+            $order = Orders::where('id', 1)->with('orderSeatConfig')->get();
 
             if (!$order) {
                 return response()->json(['error' => 'Order not found'], 404);
@@ -214,7 +213,6 @@ class OrderRealTimeController extends Controller
         // ek hi baar mai vip, SS, sleeper sara bana le seat config 
 
     }
-
 
 
     public function seatConfigRun($orderId)
@@ -340,6 +338,80 @@ class OrderRealTimeController extends Controller
 
         return null;
     }
+
+
+    /// initial step of seat booking
+
+    public function realTimeSeatHoldingStatus(Request $request)
+    {
+        try {
+            $seatNo = $request->seat_no;
+
+            $expiredTime = now()->subMinutes(5);
+            RealTimeSeatHolding::where('created_at', '<', $expiredTime)->delete();
+
+            $exists = RealTimeSeatHolding::where('bus_id', $request->bus_id)
+                ->where('seat_no', $seatNo)
+                ->where('seat_type', $request->seat_type)
+                ->exists();
+
+            if ($exists) {
+                
+                $holdSeats = RealTimeSeatHolding::get(['seat_no']);
+                
+                return response()->json([
+                    'message' => "Seat $seatNo already on hold",
+                    'status' => true,
+                    'data' => $holdSeats,
+                ]);
+            }
+
+
+           $data = RealTimeSeatHolding::create([
+                'bus_id' => $request->bus_id,
+                'user_id' => $request->user_id,
+                'seat_type' => $request->seat_type,
+                'seat_no' => $request->seat_no,
+            ]);
+
+            return response()->json([
+                'message' => "Seat held successfully",
+                'status' => 200,
+                'seat_no' => $data->seat_no,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'status' => 'error'
+            ], 500);
+        }
+    }
+
+    public function realTimeSeatReleaseStatus(Request $request)
+    {
+        try {
+            
+            $deleted = RealTimeSeatHolding::where('bus_id', $request->bus_id)
+                ->where('seat_type', $request->seat_type)
+                ->where('user_id', $request->user_id)
+                ->where('seat_no', $request->seat_no)
+                ->delete();
+
+            return response()->json([
+                'message' => $deleted ? 'Seat released, please select new seat' : 'No matching seat found',
+                'status' => 200,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'status' => 'error'
+            ], 500);
+        }
+    }
+
+
 
 
 }

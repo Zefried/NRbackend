@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\BusConfig\BusLocation\BusLocation;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class BusLocationController extends Controller
@@ -50,33 +51,82 @@ class BusLocationController extends Controller
         }
     }
 
+   
     public function addLocation(Request $request)
     {
         try {
-            // Validate input data using the private validation method
-            $validationResult = $this->validateLocationData($request);
+            $locations = $request->all();
+            $isBulk = isset($locations[0]);
+            $results = [];
 
-            if ($validationResult !== true) {
-                return $validationResult;
+            DB::beginTransaction();
+
+            if ($isBulk) {
+                foreach ($locations as $index => $item) {
+                    $validation = Validator::make($item, [
+                        'location_name' => 'required|string|max:255',
+                        'short_code' => 'required|string|max:50|regex:/^[a-zA-Z]*$/',
+                    ]);
+
+                    if ($validation->fails()) {
+                        DB::rollBack();
+                        return response()->json([
+                            'status' => 400,
+                            'message' => "Validation failed at index {$index}.",
+                            'errors' => $validation->messages()
+                        ]);
+                    }
+
+                    $location = BusLocation::updateOrCreate(
+                        ['short_code' => $item['short_code']],
+                        [
+                            'location' => $item['location_name'],
+                            'short_code' => $item['short_code'],
+                        ]
+                    );
+
+                    $results[] = $location;
+                }
+
+                DB::commit();
+                return response()->json([
+                    'status' => 201,
+                    'message' => 'Bulk locations added/updated successfully.',
+                    'data' => $results
+                ]);
+            } else {
+                $validation = Validator::make($request->all(), [
+                    'location_name' => 'required|string|max:255',
+                    'short_code' => 'required|string|max:50|regex:/^[a-zA-Z]*$/',
+                ]);
+
+                if ($validation->fails()) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => 400,
+                        'message' => 'Validation failed.',
+                        'errors' => $validation->messages()
+                    ]);
+                }
+
+                $location = BusLocation::updateOrCreate(
+                    ['short_code' => $request->short_code],
+                    [
+                        'location' => $request->location_name,
+                        'short_code' => $request->short_code,
+                    ]
+                );
+
+                DB::commit();
+                return response()->json([
+                    'status' => 201,
+                    'message' => 'Location added successfully.',
+                    'data' => $location
+                ]);
             }
-    
-            // Create or update the BusLocation entry
-            $location = BusLocation::updateOrCreate(
-                ['short_code' => $request->location_shortCode], // Condition to find the record
-                [
-                    'location' => $request->location_name,  // The attributes to update or create
-                    'short_code' => $request->location_shortCode,
-                ]
-            );
-    
-            // Return success response
-            return response()->json([
-                'status' => 201,
-                'message' => 'Location added successfully.',
-                'data' => $location
-            ]);
-    
+
         } catch (Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'status' => 500,
                 'message' => 'Something went wrong on the server.',
@@ -84,28 +134,9 @@ class BusLocationController extends Controller
             ]);
         }
     }
-    
-    // Private method for validation
-    private function validateLocationData(Request $request)
-    {
-        $validate = Validator::make($request->all(), [
-            'location_name' => 'required|string|max:255',
-            'location_shortCode' => 'required|string|max:50|regex:/^[a-zA-Z]*$/',
-        ]);
-    
-        if ($validate->fails()) {
-            return response()->json([
-                'status' => 400,
-                'message' => 'Validation failed.',
-                'errors' => $validate->messages()
-            ]);
-        }
-    
-        return true; // Return true if validation passes
-    }
-    // Data create ends here
 
-    
+        
+
     // Data View Starts here
     public function viewLocation(Request $request) {
         try {

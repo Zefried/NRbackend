@@ -6,6 +6,7 @@ use App\Http\Controllers\BusConfig\AddBus\AddBusController;
 use App\Http\Controllers\BusConfig\AddSeats\NormalSeat_SS_Controller;
 use App\Http\Controllers\BusConfig\Amenities\AmenitiesController;
 use App\Http\Controllers\BusConfig\BusLocation\BusLocationController;
+use App\Http\Controllers\Orders\OrderRealTime\ViewSeatConfigs;
 use App\Http\Controllers\Orders\BookingRealTime\BookingController;
 use App\Http\Controllers\Orders\OrderRealTime\OrderRealTimeController;
 use App\Http\Controllers\TestController;
@@ -66,10 +67,15 @@ Route::post('/returnDoubleSide', [NormalSeat_SS_Controller::class, 'returnDouble
 
 
 
+Route::post('/real-time-seat-update', [OrderRealTimeController::class, 'realTimeSeatHoldingStatus']);
+Route::post('/real-time-seat-release', [OrderRealTimeController::class, 'realTimeSeatReleaseStatus']);
 
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
 ////////////////// All view apis are done here///////////////////
 
+// now building stuff
 
-Route::get('/findGender', [TestController::class, 'findGender']);
+Route::post('/findGender', [TestController::class, 'findGender']);
+Route::get('/view-bus-seat-configs', [ViewSeatConfigs::class, 'viewSeatConfigs']);
+Route::get('/search-location', [TestController::class, 'searchLocation']);
