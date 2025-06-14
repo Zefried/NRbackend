@@ -6,6 +6,7 @@ use App\Http\Controllers\BusConfig\AddBus\AddBusController;
 use App\Http\Controllers\BusConfig\AddSeats\NormalSeat_SS_Controller;
 use App\Http\Controllers\BusConfig\Amenities\AmenitiesController;
 use App\Http\Controllers\BusConfig\BusLocation\BusLocationController;
+use App\Http\Controllers\BusConfig\BusRouteInfo\BusRouteInfo;
 use App\Http\Controllers\Orders\OrderRealTime\ViewSeatConfigs;
 use App\Http\Controllers\Orders\BookingRealTime\BookingController;
 use App\Http\Controllers\Orders\OrderRealTime\OrderRealTimeController;
@@ -77,5 +78,12 @@ Route::post('/real-time-seat-release', [OrderRealTimeController::class, 'realTim
 // now building stuff
 
 Route::post('/findGender', [TestController::class, 'findGender']);
-Route::get('/view-bus-seat-configs', [ViewSeatConfigs::class, 'viewSeatConfigs']);
 Route::get('/search-location', [TestController::class, 'searchLocation']);
+
+Route::get('/view-bus-seat-configs', [ViewSeatConfigs::class, 'viewSeatConfigs']);
+
+
+Route::post('/add-route-info', [BusRouteInfo::class, 'addRouteInfo']);
+Route::post('/search-bus', [BusRouteInfo::class, 'searchBus']);
+Route::post('/fetch-bus-data', [BusRouteInfo::class, 'fetchSingleBusData']);
+Route::get('/fetch-bus-state/{busId}', [BusRouteInfo::class, 'fetchBusState']);  // if eg:sleeper?render 

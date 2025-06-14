@@ -22,62 +22,61 @@ class AddBusController extends Controller
                 'driver_name' => 'required|string|max:255',
                 'driver_phone' => 'required|string|size:10',
                 'driver_alternative_phone' => 'nullable|string|size:10',
+                'driverTwo_name' => 'nullable|string|max:255',
+                'driverTwo_phone' => 'nullable|string|size:10',
+                'handyman_name' => 'nullable|string|max:255',
+                'handyman_phone' => 'nullable|string|size:10',
+                'sleeper' => 'nullable|boolean',
+                'vip' => 'nullable|boolean',
+                'Ac_type' => 'nullable|boolean',
+                'bus_config' => 'nullable|string|max:255',
             ]);
 
             if ($validator->fails()) {
                 return response()->json(['validation_error' => $validator->messages()]);
             }
 
-            // Check if the bus with the plate number already exists
             $busData = AddBus::where('bus_plate_number', $request->bus_plate_number)->first();
 
+            $payload = [
+                'operator_name' => $request->operator_name,
+                'bus_name' => $request->bus_name,
+                'bus_type' => $request->bus_type,
+                'driver_name' => $request->driver_name,
+                'driver_phone' => $request->driver_phone,
+                'driver_alternative_phone' => $request->driver_alternative_phone,
+                'driverTwo_name' => $request->driverTwo_name,
+                'driverTwo_phone' => $request->driverTwo_phone,
+                'handyman_name' => $request->handyman_name,
+                'handyman_phone' => $request->handyman_phone,
+                'sleeper' => $request->sleeper ?? false,
+                'seater' => $request->seater ?? false,
+                'vip' => $request->vip ?? false,
+                'Ac_type' => $request->Ac_type ?? true,
+                'bus_config' => $request->bus_config ?? 'pending',
+            ];
+
             if ($busData) {
-
-                // Bus exists, update it
-                $busData->update([
-                    'operator_name' => $request->operator_name,
-                    'bus_name' => $request->bus_name,
-                    'bus_type' => $request->bus_type,
-                    'driver_name' => $request->driver_name,
-                    'driver_phone' => $request->driver_phone,
-                    'driver_alternative_phone' => $request->driver_alternative_phone,
-                ]);
-
+                $busData->update($payload);
             } else {
-
-                // Bus doesn't exist, create a new one
-                $busData = AddBus::create([
-                    'bus_plate_number' => $request->bus_plate_number,
-                    'operator_name' => $request->operator_name,
-                    'unique_bus_id' => $this->generateUniqueId(), // Generate only for new records
-                    'bus_name' => $request->bus_name,
-                    'bus_type' => $request->bus_type,
-                    'driver_name' => $request->driver_name,
-                    'driver_phone' => $request->driver_phone,
-                    'driver_alternative_phone' => $request->driver_alternative_phone,
-                ]);
-
+                $payload['bus_plate_number'] = $request->bus_plate_number;
+                $payload['unique_bus_id'] = $this->generateUniqueId();
+                $busData = AddBus::create($payload);
             }
 
-            // Check if bus record is created or updated
             if ($busData) {
-                
                 return response()->json([
                     'status' => 200,
                     'message' => 'Bus added/updated successfully',
                     'bus_data' => $busData,
                 ]);
-
             } else {
-
                 return response()->json([
                     'status' => 400,
                     'message' => 'Failed to add/update bus, please check the form data',
                 ]);
-
             }
         } catch (Exception $e) {
-
             return response()->json([
                 'status' => 500,
                 'message' => 'Server error',
