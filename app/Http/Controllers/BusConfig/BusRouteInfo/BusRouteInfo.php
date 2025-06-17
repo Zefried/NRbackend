@@ -5,6 +5,7 @@ namespace App\Http\Controllers\BusConfig\BusRouteInfo;
 use App\Http\Controllers\Controller;
 use App\Models\BusConfig\AddBus\AddBus;
 use App\Models\BusConfig\BusRouteInfo\BusRouteInfoModel;
+use App\Models\BusConfig\RealTimeSeatHoldingStatus\RealTimeSeatHolding;
 use App\Models\BusConfig\SeatConfig\SeatConfig;
 use Illuminate\Http\Request;
 
@@ -120,14 +121,21 @@ class BusRouteInfo extends Controller
     }
 
     public function fetchSingleBusData(Request $Request){
+      
         $busId = $Request->input('bus_id');
-        $busData = BusRouteInfoModel::where('bus_id', $busId)->get([
+
+        $busData = BusRouteInfoModel::where('bus_id', $busId)
+        ->where('origin',$Request->origin)
+        ->where('destination', $Request->destination)
+        ->get([
             'routes',
             'boarding_points',
             'dropping_points',
             'rest_point',
             'rest_duration',
-            'estimated_duration'
+            'estimated_duration',
+            'sleeper_offer_price',
+            'seater_offer_price',
         ]);
         
         return response()->json($busData);
@@ -151,6 +159,33 @@ class BusRouteInfo extends Controller
         }
     }
 
+    public function fetchBoardDropinfo(Request $request)
+    {
+        try {
+
+            $routeInfoData = BusRouteInfoModel::where('bus_id', $request->bus_id)
+                ->where('origin', $request->origin)
+                ->where('destination', $request->destination)
+                ->first(['boarding_points', 'dropping_points', 'id']);
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Boarding & Dropping Points fetched successfully',
+                'data' => $routeInfoData
+            ]);
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'status' => 500,
+                'message' => 'Something went wrong',
+                'error' => $e->getMessage()
+            ]);
+
+        }
+    }
+
+
+   
 
 
 }

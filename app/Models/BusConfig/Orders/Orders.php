@@ -23,14 +23,14 @@ class Orders extends Model
         'order_status',
     ];
 
-    public function booking()
-    {
-        return $this->hasOne(Bookings::class, 'order_id')->withDefault();;
-    }
+    // public function booking()
+    // {
+    //     return $this->hasOne(Bookings::class, 'order_id')->withDefault();;
+    // }
 
-    public function orderSeatConfig()
-    {
-        return $this->hasMany(SeatHoldingConfig::class, 'order_id');
-    }
+    // public function orderSeatConfig()
+    // {
+    //     return $this->hasMany(SeatHoldingConfig::class, 'order_id');
+    // }
 
 }

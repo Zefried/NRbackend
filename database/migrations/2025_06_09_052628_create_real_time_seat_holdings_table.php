@@ -13,10 +13,13 @@ return new class extends Migration
     {
         Schema::create('real_time_seat_holdings', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('bus_id')->nullable();
-            $table->unsignedBigInteger('user_id')->nullable();
+            $table->foreignId('bus_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('booking_id')->nullable()->constrained('bookings')->nullOnDelete();
             $table->integer('seat_no')->nullable();
             $table->string('seat_type')->nullable();
+            $table->string('origin')->nullable();
+            $table->string('destination')->nullable();
             $table->timestamps();
 
             $table->index(['bus_id', 'seat_no', 'seat_type']);

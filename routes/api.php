@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AdminAuth\AdminLoginController;
 use App\Http\Controllers\Auth\AdminAuth\AdminRegisterController;
+use App\Http\Controllers\Auth\UserAuth\UserAuthController;
 use App\Http\Controllers\BusConfig\AddBus\AddBusController;
 use App\Http\Controllers\BusConfig\AddSeats\NormalSeat_SS_Controller;
 use App\Http\Controllers\BusConfig\Amenities\AmenitiesController;
@@ -24,17 +25,14 @@ Route::get('/user', function (Request $request) {
 
 
 Route::post('/admin-register', [AdminRegisterController::class, 'adminRegister']);
-Route::post('/admin-login', [AdminLoginController::class, 'adminLogin']);
+
 
 
 Route::post('/user-register', [AdminRegisterController::class, 'userRegister']);
-Route::post('/user-login', [AdminLoginController::class, 'userLogin']);
 
 // location master work is done 
 Route::get('/verify-location', [BusLocationController::class, 'verifyLocation']);
-
 Route::post('/add-location', [BusLocationController::class, 'addLocation']);
-
 Route::get('/view-location', [BusLocationController::class, 'viewLocation']);
 // ends here
 
@@ -68,14 +66,18 @@ Route::post('/returnDoubleSide', [NormalSeat_SS_Controller::class, 'returnDouble
 
 
 
-Route::post('/real-time-seat-update', [OrderRealTimeController::class, 'realTimeSeatHoldingStatus']);
-Route::post('/real-time-seat-release', [OrderRealTimeController::class, 'realTimeSeatReleaseStatus']);
+Route::post('/real-time-seat-update', [BookingController::class, 'realTimeSeatHoldingStatus']);
+Route::post('/real-time-seat-release', [BookingController::class, 'realTimeSeatReleaseStatus']);
 
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
 ////////////////// All view apis are done here///////////////////
 
 // now building stuff
+
+
+Route::post('/user-register', [UserAuthController::class, 'userRegister']);
+Route::post('/user-login', [UserAuthController::class, 'userLogin']);
 
 Route::post('/findGender', [TestController::class, 'findGender']);
 Route::get('/search-location', [TestController::class, 'searchLocation']);
@@ -87,3 +89,13 @@ Route::post('/add-route-info', [BusRouteInfo::class, 'addRouteInfo']);
 Route::post('/search-bus', [BusRouteInfo::class, 'searchBus']);
 Route::post('/fetch-bus-data', [BusRouteInfo::class, 'fetchSingleBusData']);
 Route::get('/fetch-bus-state/{busId}', [BusRouteInfo::class, 'fetchBusState']);  // if eg:sleeper?render 
+Route::post('/boarding-dropping-info', [BusRouteInfo::class, 'fetchBoardDropinfo']);
+
+
+
+Route::post('/continue-booking', [BookingController::class, 'continueBooking']);
+Route::post('/fetch-psg-fields', [BookingController::class, 'fetchPsgFields']);
+Route::post('/add-psg-data', [BookingController::class, 'addPsgData']);
+Route::post('/fetch-data-for-payOnBoard', [BookingController::class, 'fetchPayOnBoardData']);
+Route::post('/pay-on-board', [BookingController::class, 'payOnBoard']);
+Route::post('/fetch-my-ticket', [BookingController::class, 'fetchMyTicket']);

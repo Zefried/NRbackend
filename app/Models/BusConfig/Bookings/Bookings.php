@@ -4,6 +4,7 @@ namespace App\Models\BusConfig\Bookings;
 
 use App\Models\BusConfig\AddBus\AddBus;
 use App\Models\BusConfig\Orders\Orders;
+use App\Models\BusConfig\RealTimeSeatHoldingStatus\RealTimeSeatHolding;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
@@ -12,17 +13,20 @@ class Bookings extends Model
   
     protected $fillable = [
         'user_id',
-        'order_id',
         'bus_id',
-        'transaction_id',
-        'gender',
-        'user_phone',
-        'seat_type',
-        'seat_no',
-        'boarding',
-        'dropping',
-        'amount',
+        'route_info_id',
+        'pnr_code',
+        'booking_status',
         'payment_status',
+        'counter_no',
+        'total_fare',
+        'total_seats',
+        'chalan_status',
+        'chalan_no',
+        'transaction_id',
+        'origin',
+        'destination',
+        'date_of_journey',
     ];
 
     public function user()
@@ -30,9 +34,8 @@ class Bookings extends Model
         return $this->belongsTo(User::class)->withDefault();
     }
 
-    public function order()
-    {
-        return $this->belongsTo(Orders::class, 'order_id')->withDefault();
+    public function realTimeHoldings() {
+        return $this->hasMany(RealTimeSeatHolding::class, 'booking_id');
     }
 
     public function bus()

@@ -342,74 +342,7 @@ class OrderRealTimeController extends Controller
 
     /// initial step of seat booking
 
-    public function realTimeSeatHoldingStatus(Request $request)
-    {
-        try {
-            $seatNo = $request->seat_no;
-
-            $expiredTime = now()->subMinutes(5);
-            RealTimeSeatHolding::where('created_at', '<', $expiredTime)->delete();
-
-            $exists = RealTimeSeatHolding::where('bus_id', $request->bus_id)
-                ->where('seat_no', $seatNo)
-                ->where('seat_type', $request->seat_type)
-                ->exists();
-
-            if ($exists) {
-                
-                $holdSeats = RealTimeSeatHolding::get(['seat_no']);
-                
-                return response()->json([
-                    'message' => "Seat $seatNo already on hold",
-                    'status' => true,
-                    'data' => $holdSeats,
-                ]);
-            }
-
-
-           $data = RealTimeSeatHolding::create([
-                'bus_id' => $request->bus_id,
-                'user_id' => $request->user_id,
-                'seat_type' => $request->seat_type,
-                'seat_no' => $request->seat_no,
-            ]);
-
-            return response()->json([
-                'message' => "Seat held successfully",
-                'status' => 200,
-                'seat_no' => $data->seat_no,
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => $e->getMessage(),
-                'status' => 'error'
-            ], 500);
-        }
-    }
-
-    public function realTimeSeatReleaseStatus(Request $request)
-    {
-        try {
-            
-            $deleted = RealTimeSeatHolding::where('bus_id', $request->bus_id)
-                ->where('seat_type', $request->seat_type)
-                ->where('user_id', $request->user_id)
-                ->where('seat_no', $request->seat_no)
-                ->delete();
-
-            return response()->json([
-                'message' => $deleted ? 'Seat released, please select new seat' : 'No matching seat found',
-                'status' => 200,
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => $e->getMessage(),
-                'status' => 'error'
-            ], 500);
-        }
-    }
+   
 
 
 
