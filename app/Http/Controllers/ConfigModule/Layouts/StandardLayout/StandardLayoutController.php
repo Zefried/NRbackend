@@ -45,9 +45,9 @@ class StandardLayoutController extends Controller
         try {
             $validated = $request->validate([
                 'operator_id'     => 'integer',
-                'seater'          => 'boolean',
-                'sleeper'         => 'boolean',
-                'doubleSleeper'   => 'boolean',
+                'seater'          => 'required',
+                'sleeper'         => 'required',
+                'doubleSleeper'   => 'required',
                 'data'            => 'required|array',
                 'data.*.type'     => 'string|in:seater,sleeper,upper,lower',
                 'data.*.row'      => 'integer|min:1',
@@ -55,15 +55,14 @@ class StandardLayoutController extends Controller
             ]);
 
             $layout = StandardLayMaster::updateOrCreate(
-                ['operator_id' => $request->get('operator_id')],
+                ['operator_id' => $request->operator_id],
                 [
-                    'seater'        => $request->get('seater', false),
-                    'sleeper'       => $request->get('sleeper', false),
-                    'doubleSleeper' => $request->get('doubleSleeper', false),
+                    'seater'        => $request->seater,
+                    'sleeper'       => $request->sleeper,
+                    'double_sleeper' => $request->doubleSleeper,
                 ]
             );
 
-            // delete old layout details before adding new
             $layout->standardLayDetail()->delete();
 
             foreach ($validated['data'] as $entry) {
@@ -87,6 +86,7 @@ class StandardLayoutController extends Controller
             ]);
         }
     }
+
 
 
 

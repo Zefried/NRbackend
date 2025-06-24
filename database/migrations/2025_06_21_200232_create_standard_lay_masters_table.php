@@ -17,7 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('operator_id');
             $table->boolean('seater')->default(false)->index();
             $table->boolean('sleeper')->default(false)->index();
-            $table->boolean('doubleSleeper')->default(false)->index();
+            $table->boolean('double_sleeper')->default(false)->index();
             $table->timestamps();
 
             $table->foreign('operator_id')->references('id')->on('users')->onDelete('cascade');

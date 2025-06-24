@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\BookingModule\BookingLayout\GenerateLayout\GenerateLayoutController;
+use App\Http\Controllers\BookingModule\PNR\PnrController;
+use App\Http\Controllers\BookingModule\SeatHold\SeatHoldController;
 use App\Http\Controllers\ConfigModule\Boarding\BoardingController;
 use App\Http\Controllers\ConfigModule\Fare\FareController;
 use App\Http\Controllers\ConfigModule\Layouts\StandardLayout\StandardLayoutController;
@@ -20,5 +23,8 @@ Route::post('/layout', [StandardLayoutController::class, 'resource']); // standa
 Route::post('/serving-route', [ServingRouteController::class, 'resource']);
 Route::post('/boarding', [BoardingController::class, 'resource']);
 Route::post('/fair', [FareController::class, 'resource']);
+Route::post('/seat-hold-config', [SeatHoldController::class, 'resource']);
+Route::post('/pnr', [PnrController::class, 'resource']);
+Route::post('/generate-layout', [GenerateLayoutController::class, 'resource']);
 
 // admin api's ends here
