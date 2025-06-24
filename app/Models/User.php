@@ -53,9 +53,9 @@ class User extends Authenticatable
         ];
     }
 
-    public function bookings() {  
-        return $this->hasMany(Bookings::class, 'user_id');  
-    }  
+    // public function bookings() {  
+    //     return $this->hasMany(Bookings::class, 'user_id');  
+    // }  
 
     
 }

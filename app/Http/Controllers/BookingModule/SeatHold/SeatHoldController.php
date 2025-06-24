@@ -70,6 +70,12 @@ class SeatHoldController extends Controller
                 ], 422);
             }
 
+            SeatHold::where('operator_id', $request->operator_id)
+            ->where('parent_route', $request->parent_route)
+            ->where('date', $request->date)
+            ->where('created_at', '<', now()->subMinutes(11))
+            ->delete();
+
             $record = SeatHold::where([
                 'user_id' => $item['user_id'],
                 'seat_type' => $item['seat_type'],
@@ -120,6 +126,12 @@ class SeatHoldController extends Controller
                     'errors' => $validated->errors(),
                 ], 422);
             }
+
+            SeatHold::where('operator_id', $request->operator_id)
+            ->where('parent_route', $request->parent_route)
+            ->where('date', $request->date)
+            ->where('created_at', '<', now()->subMinutes(11))
+            ->delete();
 
             $operatorId = $request->operator_id;
             $date = $request->date;

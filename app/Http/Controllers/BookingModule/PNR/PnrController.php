@@ -7,6 +7,7 @@ use App\Models\BookingModule\Bookings\LayoutDetail\BookingLayoutDetail;
 use App\Models\BookingModule\Bookings\LayoutMaster\BookingLayoutMaster;
 use App\Models\BookingModule\PNR\Detail\PnrDetail;
 use App\Models\BookingModule\PNR\Master\PnrMaster;
+use App\Models\BookingModule\SeatHold\SeatHold;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -76,6 +77,27 @@ class PnrController extends Controller
 
         try {
             DB::beginTransaction();
+
+            foreach ($request->details as $detail) {
+
+                $hold = SeatHold::where([
+                    'user_id' => $request->user_id,
+                    'operator_id' => $request->operator_id,
+                    'parent_route' => $request->parent_route,
+                    'date' => $request->date,
+                    'seat_type' => $detail['seat_type'],
+                    'seat_no' => $detail['seat_no'],
+                ])->first();
+
+                if ($hold && $hold->created_at->lt(now()->subMinutes(11))) {
+                        $hold->delete();
+                        return response()->json([
+                            'status' => 410,
+                            'message' => 'seat hold expired and removed',
+                            'data' => $detail
+                        ]);
+                }
+            }
 
             $master = PnrMaster::updateOrCreate(
                 [
@@ -196,16 +218,11 @@ class PnrController extends Controller
                 'available_for_female' => json_encode(array_values(array_unique($available))),
                 'booked' => json_encode(array_values(array_unique($booked))),
                 'available_seats' => $availableSeats,
-            ]);
-
-           
-            
+            ]);  
         }
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'booking layout detail updated successfully',
-        ]);
+        return true;
+
     }
 
     private function findNearValue($num, $arr)
