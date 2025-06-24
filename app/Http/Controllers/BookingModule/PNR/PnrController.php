@@ -107,6 +107,7 @@ class PnrController extends Controller
             }
 
             if (!$this->handleBookingUpdate($request)) {
+               
                 DB::rollBack();
                 return response()->json([
                     'status' => 500,
@@ -120,7 +121,7 @@ class PnrController extends Controller
                 'message' => 'PNR Master with Details created successfully',
                 'data' => $master->load('details')
             ]);
-            
+
         } catch (Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -185,11 +186,20 @@ class PnrController extends Controller
                 }
             }
 
+            $booked = array_values(array_unique($booked));
+            $female = array_values(array_unique($female));
+            $available = array_values(array_unique($available));
+            $availableSeats = $layoutDetail->total_seats - count($booked);
+
             $layoutDetail->update([
                 'female_booked' => json_encode(array_values(array_unique($female))),
                 'available_for_female' => json_encode(array_values(array_unique($available))),
                 'booked' => json_encode(array_values(array_unique($booked))),
+                'available_seats' => $availableSeats,
             ]);
+
+           
+            
         }
 
         return response()->json([
