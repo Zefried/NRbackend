@@ -14,7 +14,7 @@ class SeatHoldController extends Controller
     {
         $type = $request->type;
 
-        if ($type === 'store') {
+        if ($type === 'storeRelease') {
             return $this->store($request);
         }
 
@@ -46,7 +46,8 @@ class SeatHoldController extends Controller
     }
 
     private function store($request)
-    {
+    {   
+        
         
          try {
 
@@ -76,8 +77,7 @@ class SeatHoldController extends Controller
             ->where('created_at', '<', now()->subMinutes(11))
             ->delete();
 
-            $record = SeatHold::where([
-                'user_id' => $item['user_id'],
+            $existing = SeatHold::where([
                 'seat_type' => $item['seat_type'],
                 'seat_no' => $item['seat_no'],
                 'operator_id' => $item['operator_id'],
@@ -85,16 +85,24 @@ class SeatHoldController extends Controller
                 'date' => $item['date'],
             ])->first();
 
-            if ($record) {
-                $record->delete(); // release
-            } else {
-                SeatHold::create($item); // store
-            }
+                    if ($existing) {
+                        if ($existing->user_id == $item['user_id']) {
+                            $existing->delete(); // release by same user
+                        } else {
+                            return response()->json([
+                                'status' => 403,
+                                'message' => 'Seat already held by another user',
+                            ]);
+                        }
+                    } else {
+                        SeatHold::create($item); // store if not held
+                    }
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'seat stored/released successfully',
-        ]);
+            return response()->json([
+                'status' => 200,
+                'message' => 'seat stored/released successfully',
+                'date' => $existing,
+            ]);
 
         } catch (Exception $e) {
             return response()->json([
