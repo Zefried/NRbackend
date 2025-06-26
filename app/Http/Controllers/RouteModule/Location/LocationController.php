@@ -17,25 +17,11 @@ class LocationController extends Controller
             return $this->store($request);
         }
 
-        if ($type === 'view') {
-            return $this->view($request);
-        }
 
         if ($type === 'search') {
             return $this->search($request);
         }
 
-        if ($type === 'update') {
-            return $this->update($request);
-        }
-
-        if ($type === 'disable') {
-            return $this->disable($request);
-        }
-
-        if ($type === 'delete') {
-            return $this->delete($request);
-        }
 
         return response()->json(['status' => false, 'message' => 'Invalid type'], 400);
     }
@@ -78,12 +64,7 @@ class LocationController extends Controller
         }
     }
 
-    private function view(Request $request)
-    {
-      ///
-    }
-
-    private function search(Request $request)
+    public function search(Request $request)
     {
         try {
             $query = $request->input('query');
@@ -107,19 +88,5 @@ class LocationController extends Controller
         }
     }
 
-    private function update(Request $request)
-    {
-        //
-    }
-
-    private function disable(Request $request)
-    {
-        //
-    }
-
-    private function delete(Request $request)
-    {
-        //
-    }
-    
+   
 }

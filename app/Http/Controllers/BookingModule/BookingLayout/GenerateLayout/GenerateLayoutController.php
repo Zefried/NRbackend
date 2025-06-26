@@ -16,7 +16,7 @@ class GenerateLayoutController extends Controller
     public function resource(Request $request)
     {
         $type = $request->type;
-
+        
         if ($type === 'generate') {
             return $this->generateBookingLayout($request);
         }

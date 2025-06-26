@@ -52,7 +52,6 @@ class PnrController extends Controller
     }
 
    
-
     public function store($request)
     {
         $validator = Validator::make($request->all(), [
@@ -77,9 +76,10 @@ class PnrController extends Controller
 
         try {
             DB::beginTransaction();
-
+          
+            $validHolds = [];
             foreach ($request->details as $detail) {
-
+              
                 $hold = SeatHold::where([
                     'user_id' => $request->user_id,
                     'operator_id' => $request->operator_id,
@@ -89,22 +89,34 @@ class PnrController extends Controller
                     'seat_no' => $detail['seat_no'],
                 ])->first();
 
-                if ($hold && $hold->created_at->lt(now()->subMinutes(11))) {
+                if ($hold) {
+                    if ($hold->created_at->lt(now()->subMinutes(11))) {
                         $hold->delete();
                         return response()->json([
                             'status' => 410,
                             'message' => 'seat hold expired and removed',
                             'data' => $detail
                         ]);
+                    } else {
+                        $validHolds[] = $hold;
+                    }
                 }
             }
 
-            $master = PnrMaster::updateOrCreate(
-                [
+            $hold = SeatHold::where([
                     'user_id' => $request->user_id,
                     'operator_id' => $request->operator_id,
                     'parent_route' => $request->parent_route,
                     'date' => $request->date,
+            ])->first(); // keep this hold it ensures consistency in code
+
+
+            $master = PnrMaster::updateOrCreate(
+                [
+                    'user_id' => $hold->user_id,
+                    'operator_id' => $hold->operator_id,
+                    'parent_route' => $hold->parent_route,
+                    'date' => $hold->date,
                 ],
                 [
                     'pnr' => $this->generateUniquePnrCode(),
@@ -129,7 +141,6 @@ class PnrController extends Controller
             }
 
             if (!$this->handleBookingUpdate($request)) {
-               
                 DB::rollBack();
                 return response()->json([
                     'status' => 500,
@@ -155,7 +166,6 @@ class PnrController extends Controller
     }
 
 
-    
     function generateUniquePnrCode()
     {
         do {
