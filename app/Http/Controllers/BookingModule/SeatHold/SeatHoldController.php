@@ -59,7 +59,7 @@ class SeatHoldController extends Controller
                 'seat_no' => 'required|string',
                 'operator_id' => 'required|integer',
                 'parent_route' => 'required|string',
-                'serving_route_id' => 'required|integer',
+                // 'serving_route_id' => 'required|integer', not really needed
                 'date' => 'required|date',
             ]);
 
@@ -76,6 +76,7 @@ class SeatHoldController extends Controller
             ->where('date', $request->date)
             ->where('created_at', '<', now()->subMinutes(11))
             ->delete();
+
 
             $existing = SeatHold::where([
                 'seat_type' => $item['seat_type'],

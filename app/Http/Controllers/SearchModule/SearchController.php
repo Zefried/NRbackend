@@ -58,6 +58,7 @@ class SearchController extends Controller
                         'fare' => $fare,
                         'parent_route' => $route->parent_route,
                         'operator_id' => $route->operator_id,
+                        'serving_route_id' => $route->id,
                     ];
                 }
             }
