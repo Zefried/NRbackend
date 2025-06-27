@@ -50,6 +50,12 @@ Route::post('/ticket', [TicketController::class, 'resource']);
     Route::post('/search-bus', [SearchController::class, 'searchBus']);
     Route::post('/fetch-seat-ui', [ClientSearchController::class, 'fetchSeatUI']);
     Route::post('/fetch-seat-data', [ClientSearchController::class, 'fetchSeatData']);
+    Route::post('/get-boarding-detail', [ClientSearchController::class, 'fetchBoardingDetail']);
+    Route::post('/get-user-seat-holdings', [ClientSearchController::class, 'getUserSeatHoldings']);
+    Route::post('/get-user-pnr-data', [ClientSearchController::class, 'getuserPnr']);
+    Route::post('/generate-user-ticket', [ClientSearchController::class, 'generateUserTicket']);
+    Route::post('/get-user-tickets', [ClientSearchController::class, 'getUserTickets']);
+
 
 
 // Api for client ends here

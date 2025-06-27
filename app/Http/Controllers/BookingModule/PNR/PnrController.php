@@ -152,7 +152,6 @@ class PnrController extends Controller
             return response()->json([
                 'status' => 200,
                 'message' => 'PNR Master with Details created successfully',
-                'data' => $master->load('details')
             ]);
 
         } catch (Exception $e) {
