@@ -17,7 +17,7 @@ class UserAuthController extends Controller
             
             $validator = Validator::make($request->form, [
                 'name' => 'required|string',
-                'gender' => 'required|string',
+                // 'gender' => 'required|string',
                 'phone' => 'required|unique:users,phone',
             ]);
 
@@ -33,11 +33,11 @@ class UserAuthController extends Controller
 
                 $user = User::create([
                     'name'     => $data['name'],
-                    'gender'   => $data['gender'],
+                    // 'gender'   => $data['gender'],
                     'phone'    => $data['phone'],
                     'role'     => 'customer',
-                    'password' => Hash::make($data['name']),
-                    'pswView'  => $data['name'],
+                    'password' => Hash::make($data['phone']),
+                    'pswView'  => $data['phone'],
                 ]);
 
             $loginData = $this->autoLogin($user);
